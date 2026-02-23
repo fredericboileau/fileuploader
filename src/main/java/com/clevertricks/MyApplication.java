@@ -18,7 +18,7 @@ public class MyApplication {
     CommandLineRunner init(StorageService storageService, StorageProperties properties) {
         return (args) -> {
             // storageService.deleteAll();
-            // storageService.init();
+            storageService.init();
             System.out.println("Storage type :" + storageService.getClass().getSimpleName());
             System.out.println("Stoarge location: " + properties.getLocation());
         };
