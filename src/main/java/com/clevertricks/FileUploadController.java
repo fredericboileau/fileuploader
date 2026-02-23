@@ -48,7 +48,16 @@ public class FileUploadController {
     @PostMapping("/")
     public String handleFileUpload(@RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes) {
-        storageService.store(file);
+        try {
+            storageService.store(file);
+        } catch (StorageFileAlreadyExistsException e) {
+            redirectAttributes.addFlashAttribute("message",
+                    "File with same name already exists, you need to delete it first to ");
+            return "redirect:/files";
+        } catch (StorageFileEmptyException e) {
+            redirectAttributes.addFlashAttribute("message", "Cannot upload empty file");
+            return "redirect:/files";
+        }
         redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename());
         return "redirect:/files";
 
@@ -56,6 +65,7 @@ public class FileUploadController {
 
     @PostMapping("/files/delete")
     public String deleteFiles(@RequestParam List<String> files, RedirectAttributes redirectAttributes) {
+        files.forEach(System.out::println);
         files.forEach(storageService::delete);
         redirectAttributes.addFlashAttribute("message", "Deleted " + files.size() + "file(s)");
         return "redirect:/files";

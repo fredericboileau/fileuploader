@@ -37,17 +37,20 @@ public class PostgresqlStorageService implements StorageService {
     public void store(MultipartFile file) throws StorageException {
         String sql = "INSERT INTO files (name, data) VALUES (?, ?)";
         if (file.isEmpty()) {
-            throw new StorageException("Cannot store empty file");
+            throw new StorageFileEmptyException("Cannot store empty file");
         }
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, file.getOriginalFilename());
             stmt.setBytes(2, file.getBytes());
             stmt.executeUpdate();
-        } catch (SQLException | IOException e) {
-            System.out.println("ERROR DUPLICATE");
+        } catch (SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                throw new StorageFileAlreadyExistsException("File already exists: " + file.getOriginalFilename());
+            }
             throw new StorageException("Failed to store file", e);
-
+        } catch (IOException e) {
+            throw new StorageException("Failed to store file", e);
         }
 
     }
@@ -104,7 +107,7 @@ public class PostgresqlStorageService implements StorageService {
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, filename);
-            stmt.executeQuery();
+            stmt.executeUpdate();
 
         } catch (SQLException e) {
             throw new StorageException("Failed to delete file");
