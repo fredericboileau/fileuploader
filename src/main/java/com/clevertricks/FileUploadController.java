@@ -1,5 +1,6 @@
 package com.clevertricks;
 
+import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -28,11 +29,7 @@ public class FileUploadController {
 
     @GetMapping("/files")
     public String listUploadedFiles(Model model) {
-        model.addAttribute("files", storageService.loadAll().map(
-                filename -> MvcUriComponentsBuilder.fromMethodName(FileUploadController.class,
-                        "serveFile",
-                        filename).build().toUri().toString())
-                .collect(Collectors.toList()));
+        model.addAttribute("files", storageService.loadAll().collect(Collectors.toList()));
         return "uploadForm";
     }
 
@@ -55,6 +52,13 @@ public class FileUploadController {
         redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename());
         return "redirect:/files";
 
+    }
+
+    @PostMapping("/files/delete")
+    public String deleteFiles(@RequestParam List<String> files, RedirectAttributes redirectAttributes) {
+        files.forEach(storageService::delete);
+        redirectAttributes.addFlashAttribute("message", "Deleted " + files.size() + "file(s)");
+        return "redirect:/files";
     }
 
     @ExceptionHandler(StorageFileNotFoundException.class)

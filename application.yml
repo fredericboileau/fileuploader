@@ -5,9 +5,11 @@ storage:
   db: fileuploader
   username: postgres
   password: postgres
-  type: filesystem
+  type: postgresql
 
 spring:
+  thymleaf:
+    cache: false
   mvc:
     pathmatch:
       use-suffix-pattern: false

@@ -45,6 +45,7 @@ public class PostgresqlStorageService implements StorageService {
             stmt.setBytes(2, file.getBytes());
             stmt.executeUpdate();
         } catch (SQLException | IOException e) {
+            System.out.println("ERROR DUPLICATE");
             throw new StorageException("Failed to store file", e);
 
         }
@@ -98,12 +99,26 @@ public class PostgresqlStorageService implements StorageService {
     }
 
     @Override
+    public void delete(String filename) {
+        String sql = "delete from files where name = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, filename);
+            stmt.executeQuery();
+
+        } catch (SQLException e) {
+            throw new StorageException("Failed to delete file");
+        }
+
+    }
+
+    @Override
     public void init() {
         System.out.println("initializing");
         String sql = """
                 create table if not exists files (
                         id serial primary key,
-                        name varchar(255) not null,
+                        name varchar(255) unique not null,
                         data bytea not null
                 )
                 """;
