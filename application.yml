@@ -1,0 +1,13 @@
+storage:
+  location: anothertest
+  host: localhost
+  port: 5432
+  db: fileuploader
+  username: postgres
+  password: postgres
+  type: filesystem
+
+spring:
+  mvc:
+    pathmatch:
+      use-suffix-pattern: false

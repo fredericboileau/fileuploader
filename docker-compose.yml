@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: fileuploader
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      STORAGE_TYPE: postgresql
+      STORAGE_HOST: db
+      STORAGE_PORT: 5432
+      STORAGE_DB: fileuploader
+      STORAGE_USERNAME: postgres
+      STORAGE_PASSWORD: postgres
+    depends_on:
+      - db
