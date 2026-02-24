@@ -20,7 +20,7 @@ public class MyApplication {
             // storageService.deleteAll();
             storageService.init();
             System.out.println("Storage type :" + storageService.getClass().getSimpleName());
-            System.out.println("Stoarge location: " + properties.getLocation());
+            System.out.println("BOOTING");
         };
     }
 }

@@ -6,7 +6,7 @@
     </div>
 
     <div>
-      <form method="POST" enctype="multipart/form-data" action="/">
+      <form method="POST" enctype="multipart/form-data" th:action="@{/}">
         <table>
           <tr>
             <td>File to upload:</td><td><input type="file" name="file" /></td>
@@ -18,7 +18,7 @@
     </div>
 
     <div>
-      <form method="POST" action="/files/delete">
+      <form method="POST" th:action="@{/files/delete}">
         <ul>
           <li th:each="file : ${files}">
             <input type="checkbox" name="files" th:value="${file}" />

@@ -36,6 +36,7 @@ public class PostgresqlStorageService implements StorageService {
     @Override
     public void store(MultipartFile file) throws StorageException {
         String sql = "INSERT INTO files (name, data) VALUES (?, ?)";
+        System.out.println("STORING");
         if (file.isEmpty()) {
             throw new StorageFileEmptyException("Cannot store empty file");
         }

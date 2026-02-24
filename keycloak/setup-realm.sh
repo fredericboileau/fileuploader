@@ -4,13 +4,14 @@ set -e
 KEYCLOAK_URL="http://localhost:8180"
 REALM="filevault"
 CLIENT_ID="filevault-app"
-REDIRECT_URI="http://localhost:8080/login/oauth2/code/keycloak"
+CLIENT_SECRET="filevault-secret"
+REDIRECT_URI="http://localhost:8180/login/oauth2/code/keycloak"
 
 echo "Getting admin token..."
 TOKEN=$(curl -sf -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=admin&password=admin&grant_type=password&client_id=admin-cli" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+  -d "username=admin&password=admin&grant_type=password&client_id=admin-cli" |
+  python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
 echo "Creating realm '$REALM'..."
 curl -sf -X POST "$KEYCLOAK_URL/admin/realms" \
@@ -27,22 +28,12 @@ curl -sf -X POST "$KEYCLOAK_URL/admin/realms/$REALM/clients" \
     \"enabled\": true,
     \"publicClient\": false,
     \"standardFlowEnabled\": true,
+    \"secret\": \"$CLIENT_SECRET\",
     \"redirectUris\": [\"$REDIRECT_URI\"],
     \"webOrigins\": [\"http://localhost:8080\"]
   }"
 
-echo "Getting client secret..."
-CLIENT_UUID=$(curl -sf "$KEYCLOAK_URL/admin/realms/$REALM/clients?clientId=$CLIENT_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['id'])")
-
-SECRET=$(curl -sf "$KEYCLOAK_URL/admin/realms/$REALM/clients/$CLIENT_UUID/client-secret" \
-  -H "Authorization: Bearer $TOKEN" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['value'])")
-
-echo ""
-echo "Client secret: $SECRET"
-echo "Set this as KEYCLOAK_CLIENT_SECRET in docker-compose.yml"
+echo "Client secret is: $CLIENT_SECRET"
 
 echo ""
 echo "Creating test user 'alice'..."
