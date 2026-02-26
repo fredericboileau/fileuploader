@@ -5,7 +5,7 @@ KEYCLOAK_URL="http://localhost:8180"
 REALM="filevault"
 CLIENT_ID="filevault-app"
 CLIENT_SECRET="filevault-secret"
-REDIRECT_URI="http://localhost:8180/login/oauth2/code/keycloak"
+REDIRECT_URI="http://localhost:8080/login/oauth2/code/keycloak"
 
 echo "Getting admin token..."
 TOKEN=$(curl -sf -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/token" \
@@ -30,6 +30,7 @@ curl -sf -X POST "$KEYCLOAK_URL/admin/realms/$REALM/clients" \
     \"standardFlowEnabled\": true,
     \"secret\": \"$CLIENT_SECRET\",
     \"redirectUris\": [\"$REDIRECT_URI\"],
+    \"postLogoutRedirectUris\": [\"http://localhost:8080\"],
     \"webOrigins\": [\"http://localhost:8080\"]
   }"
 

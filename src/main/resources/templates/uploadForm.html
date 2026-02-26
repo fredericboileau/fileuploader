@@ -1,6 +1,13 @@
 <html xmlns:th="https://www.thymeleaf.org">
   <body>
 
+    <div>
+      <span th:text="${username}"></span>
+      <form method="POST" th:action="@{/logout}" style="display:inline">
+        <button type="submit">Logout</button>
+      </form>
+    </div>
+
     <div th:if="${message}">
       <h2 th:text="${message}"/>
     </div>
