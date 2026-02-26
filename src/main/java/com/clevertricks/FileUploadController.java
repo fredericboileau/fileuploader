@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.ui.Model;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -26,16 +28,23 @@ public class FileUploadController {
         this.storageService = storageService;
     }
 
+    private String ownerOf(OidcUser user) {
+        return user.getSubject();
+    }
+
     @GetMapping("/files")
-    public String listUploadedFiles(Model model) {
-        model.addAttribute("files", storageService.loadAll().collect(Collectors.toList()));
+    public String listUploadedFiles(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
+        String owner = ownerOf(oidcUser);
+        model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
+        model.addAttribute("username", oidcUser.getPreferredUsername());
         return "uploadForm";
     }
 
     @GetMapping("/files/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
-        Resource file = storageService.loadAsResource(filename);
+    public ResponseEntity<Resource> serveFile(@PathVariable String filename,
+            @AuthenticationPrincipal OidcUser oidcUser) {
+        Resource file = storageService.loadAsResource(filename, ownerOf(oidcUser));
 
         if (file == null)
             return ResponseEntity.notFound().build();
@@ -46,9 +55,9 @@ public class FileUploadController {
 
     @PostMapping("/")
     public String handleFileUpload(@RequestParam("file") MultipartFile file,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal OidcUser oidcUser) {
         try {
-            storageService.store(file);
+            storageService.store(file, ownerOf(oidcUser));
         } catch (StorageFileAlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("message",
                     "File with same name already exists, you need to delete it first to ");
@@ -59,14 +68,14 @@ public class FileUploadController {
         }
         redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename());
         return "redirect:/files";
-
     }
 
     @PostMapping("/files/delete")
-    public String deleteFiles(@RequestParam List<String> files, RedirectAttributes redirectAttributes) {
-        files.forEach(System.out::println);
-        files.forEach(storageService::delete);
-        redirectAttributes.addFlashAttribute("message", "Deleted " + files.size() + "file(s)");
+    public String deleteFiles(@RequestParam List<String> files, RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal OidcUser oidcUser) {
+        String owner = ownerOf(oidcUser);
+        files.forEach(f -> storageService.delete(f, owner));
+        redirectAttributes.addFlashAttribute("message", "Deleted " + files.size() + " file(s)");
         return "redirect:/files";
     }
 

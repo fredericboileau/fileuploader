@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.sql.*;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class PostgresqlStorageService implements StorageService {
@@ -34,16 +35,16 @@ public class PostgresqlStorageService implements StorageService {
 
     // check uniqueness
     @Override
-    public void store(MultipartFile file) throws StorageException {
-        String sql = "INSERT INTO files (name, data) VALUES (?, ?)";
-        System.out.println("STORING");
+    public void store(MultipartFile file, String owner) throws StorageException {
+        String sql = "INSERT INTO files (name, owner, data) VALUES (?, ?, ?)";
         if (file.isEmpty()) {
             throw new StorageFileEmptyException("Cannot store empty file");
         }
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, file.getOriginalFilename());
-            stmt.setBytes(2, file.getBytes());
+            stmt.setObject(2, UUID.fromString(owner));
+            stmt.setBytes(3, file.getBytes());
             stmt.executeUpdate();
         } catch (SQLException e) {
             if ("23505".equals(e.getSQLState())) {
@@ -57,11 +58,13 @@ public class PostgresqlStorageService implements StorageService {
     }
 
     @Override
-    public Stream<String> loadAll() {
-        String sql = "select name from files";
+    public Stream<String> loadAll(String owner) {
+        String sql = "select name from files where owner = ?";
         Stream.Builder<String> builder = Stream.builder();
         try {
-            ResultSet rs = conn.createStatement().executeQuery(sql);
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, UUID.fromString(owner));
+            ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
                 builder.add(rs.getString(1));
             }
@@ -73,18 +76,20 @@ public class PostgresqlStorageService implements StorageService {
     }
 
     @Override
-    public Resource loadAsResource(String filename) {
-        String sql = "SELECT data from files where name = ?";
+    public Resource loadAsResource(String filename, String owner) {
+        String sql = "SELECT data from files where name = ? and owner = ?";
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, filename);
+            stmt.setObject(2, UUID.fromString(owner));
             ResultSet resultset = stmt.executeQuery();
 
             if (resultset.next()) {
                 byte[] data = resultset.getBytes(1);
                 return new ByteArrayResource(data);
             }
-            throw new StorageFileNotFoundException("Could not read file: " + filename);
+            throw new StorageFileNotFoundException("Could not read file: " + filename
+                    + "\nFor owner:" + owner);
         } catch (SQLException e) {
             throw new StorageException("Failed to retrieve file", e);
         }
@@ -103,11 +108,12 @@ public class PostgresqlStorageService implements StorageService {
     }
 
     @Override
-    public void delete(String filename) {
-        String sql = "delete from files where name = ?";
+    public void delete(String filename, String owner) {
+        String sql = "delete from files where name = ? and owner = ?";
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, filename);
+            stmt.setObject(2, UUID.fromString(owner));
             stmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -122,8 +128,10 @@ public class PostgresqlStorageService implements StorageService {
         String sql = """
                 create table if not exists files (
                         id serial primary key,
-                        name varchar(255) unique not null,
-                        data bytea not null
+                        name varchar(255) not null,
+                        owner uuid not null,
+                        data bytea not null,
+                        unique (name, owner)
                 )
                 """;
         try {
