@@ -66,7 +66,7 @@ public class FileSystemStorageService implements StorageService {
         try {
             Path file = rootLocation.resolve(filename);
             Resource resource = new UrlResource(file.toUri());
-            if (resource.exists() || resource.isReadable()) {
+            if (resource.isReadable()) {
                 return resource;
             } else {
                 throw new StorageFileNotFoundException("Could not read file: " + filename);

@@ -32,7 +32,7 @@ public class FileUploadController {
         return user.getSubject();
     }
 
-    @GetMapping("/files")
+    @GetMapping("/")
     public String listUploadedFiles(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
         String owner = ownerOf(oidcUser);
         model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
@@ -67,7 +67,7 @@ public class FileUploadController {
             return "redirect:/files";
         }
         redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename());
-        return "redirect:/files";
+        return "redirect:/";
     }
 
     @PostMapping("/files/delete")
@@ -76,7 +76,7 @@ public class FileUploadController {
         String owner = ownerOf(oidcUser);
         files.forEach(f -> storageService.delete(f, owner));
         redirectAttributes.addFlashAttribute("message", "Deleted " + files.size() + " file(s)");
-        return "redirect:/files";
+        return "redirect:/";
     }
 
     @ExceptionHandler(StorageFileNotFoundException.class)

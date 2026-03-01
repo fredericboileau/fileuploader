@@ -124,7 +124,6 @@ public class PostgresqlStorageService implements StorageService {
 
     @Override
     public void init() {
-        System.out.println("initializing");
         String sql = """
                 create table if not exists files (
                         id serial primary key,

@@ -1,7 +1,10 @@
 <html xmlns:th="https://www.thymeleaf.org">
-  <body>
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-sky-500">
 
-    <div>
+    <div class="items-center gap-4 p-4 bg-gray-800 text-white">
       <span th:text="${username}"></span>
       <form method="POST" th:action="@{/logout}" style="display:inline">
         <button type="submit">Logout</button>
@@ -13,28 +16,30 @@
     </div>
 
     <div>
-      <form method="POST" enctype="multipart/form-data" th:action="@{/}">
-        <table>
-          <tr>
-            <td>File to upload:</td><td><input type="file" name="file" /></td>
-            <td></td><td><input type="submit" value="Upload" /></td>
-            <td></td>
-          </tr>
-        </table>
-      </form>
-    </div>
+      <div class="flex items-center justify-center gap-4 p-4  text-white">
+        <form method="POST" enctype="multipart/form-data" th:action="@{/}">
+          <div class="flex flex-col gap-1">
+            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+              <span id="file-label">Choose file</span>
+              <input type="file" name="file" class="hidden" 
+                onchange="document.getElementById('file-label').textContent = this.files[0]?.name ?? 'Choose file'" />
+            </label>
+            <button type="submit" class ="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded" value="Upload" /> Submit</button>
+          </div>
+        </form>
+      </div>
 
-    <div>
-      <form method="POST" th:action="@{/files/delete}">
-        <ul>
-          <li th:each="file : ${files}">
-            <input type="checkbox" name="files" th:value="${file}" />
-            <a th:href="@{/files/{file}(file=${file})}" th:text="${file}" />
-          </li>
-        </ul>
-        <button type="submit"> Delete selected</button>
-      </form>
-    </div>
+      <div class="flex items center gap-4 p-4 text-white" th:if="${not #lists.isEmpty(files)}">
+        <form method="POST" th:action="@{/files/delete}">
+          <ul>
+            <li th:each="file : ${files}">
+              <input type="checkbox" name="files" th:value="${file}" />
+              <a th:href="@{/files/{file}(file=${file})}" th:text="${file}" />
+            </li>
+          </ul>
+          <button type="submit"> Delete selected</button>
+        </form>
+      </div>
 
   </body>
 </html>
