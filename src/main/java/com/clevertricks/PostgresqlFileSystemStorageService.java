@@ -121,6 +121,34 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     }
 
     @Override
+    public Stream<String> listOwners() {
+        var sql = "select distinct owner from filepaths";
+        Stream.Builder<String> builder = Stream.builder();
+        try {
+            ResultSet rs = conn.createStatement().executeQuery(sql);
+            while (rs.next()) {
+                builder.add(rs.getString(1));
+            }
+            return builder.build();
+        } catch (SQLException e) {
+            throw new StorageException("Could not retrieve owner list", e);
+        }
+    }
+
+    @Override
+    public void deleteAllForOwner(String owner) {
+        var sql = "delete from filepaths where owner = ?";
+        try {
+            FileSystemUtils.deleteRecursively(Paths.get(rootLocation.toString(), owner).toFile());
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, UUID.fromString(owner));
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new StorageException("Could not delete DB entries for owner " + owner, e);
+        }
+    }
+
+    @Override
     public void deleteAll() {
         String sql = "drop table if exists filepaths";
         try {

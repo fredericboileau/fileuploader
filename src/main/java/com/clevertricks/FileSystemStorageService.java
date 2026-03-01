@@ -78,6 +78,16 @@ public class FileSystemStorageService implements StorageService {
     }
 
     @Override
+    public Stream<String> listOwners() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void deleteAllForOwner(String owner) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     public void deleteAll() {
         FileSystemUtils.deleteRecursively(rootLocation.toFile());
     }

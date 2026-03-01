@@ -7,11 +7,15 @@
 * DONE add keycloak and manage users
 **  DONE make every user have their own files
 * DONE make keycloak use db
-* do version with filename in database , need to test
+* DONE do version with filename in database , need to test
+*
+* do size limit per account
 * make admin account can manage files for all users
 *
 
+
 * long term
+** handle filetypes
 ** handle conversion with ffmpeg
 ** switch to spa with react
 

@@ -1,45 +1,89 @@
-<html xmlns:th="https://www.thymeleaf.org">
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
 </head>
-<body class="bg-sky-500">
+<body class="text-white">
 
-    <div class="items-center gap-4 p-4 bg-gray-800 text-white">
-      <span th:text="${username}"></span>
-      <form method="POST" th:action="@{/logout}" style="display:inline">
-        <button type="submit">Logout</button>
+  <!-- Navbar -->
+  <div class="glass flex items-center justify-between px-6 py-3">
+    <div class="flex items-center gap-4">
+      <span class="text-lg font-semibold tracking-wide">FileVault</span>
+      <a sec:authorize="hasRole('ADMIN')" href="/admin"
+        class="text-xs px-2 py-0.5 rounded-full bg-red-500/30 border border-red-400/40 text-red-300 hover:bg-red-500/50 transition">Admin</a>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-sm text-white/70" th:text="${username}"></span>
+      <form method="POST" th:action="@{/logout}">
+        <button type="submit"
+          class="text-sm px-4 py-1.5 rounded-full border border-white/30 hover:bg-white/10 transition">
+          Logout
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="flex flex-col items-center justify-center px-4 py-16 gap-8">
+
+    <!-- Flash message -->
+    <div th:if="${message}"
+      class="glass rounded-xl px-6 py-3 text-sm text-yellow-300 border-yellow-400/30">
+      <span th:text="${message}"></span>
+    </div>
+
+    <!-- Upload card -->
+    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl">
+      <h2 class="text-xl font-semibold mb-6 text-white/90">Upload a file</h2>
+      <form method="POST" enctype="multipart/form-data" th:action="@{/}">
+        <div class="flex flex-col gap-4">
+          <label class="cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-white/30 rounded-xl py-8 hover:border-white/60 transition">
+            <svg class="w-8 h-8 mb-2 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <span id="file-label" class="text-sm text-white/60">Click to choose a file</span>
+            <input type="file" name="file" class="hidden"
+              onchange="document.getElementById('file-label').textContent = this.files[0]?.name ?? 'Click to choose a file'" />
+          </label>
+          <button type="submit"
+            class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 rounded-xl transition">
+            Upload
+          </button>
+        </div>
       </form>
     </div>
 
-    <div th:if="${message}">
-      <h2 th:text="${message}"/>
+    <!-- Files card -->
+    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl" th:if="${not #lists.isEmpty(files)}">
+      <h2 class="text-xl font-semibold mb-6 text-white/90">Your files</h2>
+      <form method="POST" th:action="@{/files/delete}">
+        <ul class="flex flex-col gap-3 mb-6">
+          <li th:each="file : ${files}" class="flex items-center gap-3">
+            <input type="checkbox" name="files" th:value="${file}"
+              class="w-4 h-4 accent-indigo-400 cursor-pointer" />
+            <a th:href="@{/files/{file}(file=${file})}" th:text="${file}"
+              class="text-sm text-indigo-300 hover:text-indigo-100 hover:underline transition truncate" />
+          </li>
+        </ul>
+        <button type="submit"
+          class="w-full py-2 rounded-xl border border-red-400/40 text-red-400 hover:bg-red-500/20 text-sm font-medium transition">
+          Delete selected
+        </button>
+      </form>
     </div>
 
-    <div>
-      <div class="flex items-center justify-center gap-4 p-4  text-white">
-        <form method="POST" enctype="multipart/form-data" th:action="@{/}">
-          <div class="flex flex-col gap-1">
-            <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
-              <span id="file-label">Choose file</span>
-              <input type="file" name="file" class="hidden" 
-                onchange="document.getElementById('file-label').textContent = this.files[0]?.name ?? 'Choose file'" />
-            </label>
-            <button type="submit" class ="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded" value="Upload" /> Submit</button>
-          </div>
-        </form>
-      </div>
+  </div>
 
-      <div class="flex items center gap-4 p-4 text-white" th:if="${not #lists.isEmpty(files)}">
-        <form method="POST" th:action="@{/files/delete}">
-          <ul>
-            <li th:each="file : ${files}">
-              <input type="checkbox" name="files" th:value="${file}" />
-              <a th:href="@{/files/{file}(file=${file})}" th:text="${file}" />
-            </li>
-          </ul>
-          <button type="submit"> Delete selected</button>
-        </form>
-      </div>
-
-  </body>
+</body>
 </html>

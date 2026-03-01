@@ -97,6 +97,16 @@ public class PostgresqlStorageService implements StorageService {
     }
 
     @Override
+    public Stream<String> listOwners() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public void deleteAllForOwner(String owner) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     public void deleteAll() {
         String sql = "drop table if exists files";
         try {

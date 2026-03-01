@@ -17,4 +17,8 @@ public interface StorageService {
     void deleteAll();
 
     void delete(String filename, String owner);
+
+    Stream<String> listOwners();
+
+    void deleteAllForOwner(String owner);
 }
