@@ -38,12 +38,13 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:25.0.1
     command:
-    - start-dev
+    - start
     - --http-port=8180
     ports:
     - "8180:8180"
-    volumes:
-    - keycloak_data:/opt/keycloak/data
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
@@ -51,16 +52,20 @@ services:
       KC_HEALTH_ENABLED: true
       KC_HTTP_PORT: 8180
       KC_HOSTNAME: localhost
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
 
   db:
     image: postgres:17
     environment:
-      POSTGRES_DB: fileuploader
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -68,5 +73,4 @@ services:
       retries: 5
 
 volumes:
-  keycloak_data:
   db_data:
