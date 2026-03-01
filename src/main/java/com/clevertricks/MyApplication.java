@@ -17,10 +17,9 @@ public class MyApplication {
     @Bean
     CommandLineRunner init(StorageService storageService, StorageProperties properties) {
         return (args) -> {
-            // storageService.deleteAll();
+            storageService.deleteAll();
             storageService.init();
-            System.out.println("Storage type :" + storageService.getClass().getSimpleName());
-            System.out.println("BOOTING");
+            System.out.println("Storage type: " + storageService.getClass().getSimpleName());
         };
     }
 }

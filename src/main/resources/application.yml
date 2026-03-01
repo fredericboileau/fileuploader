@@ -1,11 +1,11 @@
 storage:
-  location: anothertest
+  location: fileuploaer
   host: localhost
   port: 5432
   db: fileuploader
   username: postgres
   password: postgres
-  type: postgresql
+  type: filesystem
 
 spring:
   mvc:

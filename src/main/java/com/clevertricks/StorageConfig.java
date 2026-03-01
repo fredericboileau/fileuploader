@@ -17,4 +17,10 @@ public class StorageConfig {
     public StorageService postgresqlStorageService(StorageProperties properties) {
         return new PostgresqlStorageService(properties);
     }
+
+    @Bean
+    @ConditionalOnProperty(name = "storage.type", havingValue = "postgresFS")
+    public StorageService posstgresqFileSystemService(StorageProperties properties) {
+        return new PostgresqlFileSystemStorageService(properties);
+    }
 }

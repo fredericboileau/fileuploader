@@ -1,0 +1,18 @@
++author: frederic boileau
+
+* DONE check unicity before inserting
+** DONE if not unique say so in html dont fail silently
+* DONE  implement delete
+* DONE setup docker compose
+* DONE add keycloak and manage users
+**  DONE make every user have their own files
+* DONE make keycloak use db
+* do version with filename in database , need to test
+* make admin account can manage files for all users
+*
+
+* long term
+** handle conversion with ffmpeg
+** switch to spa with react
+
+

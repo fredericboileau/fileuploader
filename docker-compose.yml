@@ -4,7 +4,8 @@ services:
     ports:
       - "8080:8080"
     environment:
-      STORAGE_TYPE: postgresql
+      STORAGE_TYPE: postgresFS
+      STORAGE_LOCATION: fileuploader/data
       STORAGE_HOST: db
       STORAGE_PORT: 5432
       STORAGE_DB: fileuploader
@@ -15,6 +16,8 @@ services:
       KEYCLOAK_USERINFO_URI: http://keycloak:8180/realms/filevault/protocol/openid-connect/userinfo
       KEYCLOAK_JWK_URI: http://keycloak:8180/realms/filevault/protocol/openid-connect/certs
       KEYCLOAK_CLIENT_SECRET: filevault-secret
+    volumes:
+      - fs_data:/app/fileuploader
     depends_on:
       db:
         condition: service_healthy
@@ -74,3 +77,4 @@ services:
 
 volumes:
   db_data:
+  fs_data:
