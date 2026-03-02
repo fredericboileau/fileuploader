@@ -3,13 +3,12 @@ package com.clevertricks;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
-import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.ui.Model;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -39,11 +38,6 @@ public class FileUploadController {
     @GetMapping("/")
     public String listUploadedFiles(Model model,
             @AuthenticationPrincipal OidcUser oidcUser) {
-
-        oidcUser.getClaims();
-
-        System.out.println(oidcUser);
-
         String owner = ownerOf(oidcUser);
         model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
         model.addAttribute("username", oidcUser.getPreferredUsername());
@@ -93,8 +87,8 @@ public class FileUploadController {
     @GetMapping("/admin")
     public String adminPage(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
         model.addAttribute("username", oidcUser.getPreferredUsername());
-        List<String> owners = storageService.listOwners().collect(Collectors.toList());
-        List<Map<String, Object>> users = owners.stream().map(owner -> {
+        Stream<String> owners = storageService.listOwners();
+        List<Map<String, Object>> users = owners.map(owner -> {
             Map<String, Object> entry = new java.util.LinkedHashMap<>();
             entry.put("owner", owner);
             entry.put("files", storageService.loadAll(owner).collect(Collectors.toList()));
