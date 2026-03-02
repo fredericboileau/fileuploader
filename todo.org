@@ -9,14 +9,14 @@
 * DONE make keycloak use db
 * DONE do version with filename in database , need to test
 *
-* do size limit per account
-* make admin account can manage files for all users
+* DONE prevent submit empty file
+* DONE make admin account can manage files for all users
+
+* size limit per account
+* eventlistener spi
+* take into account filetype
+* handle conversion with ffmpeg
 *
-
-
-* long term
-** handle filetypes
-** handle conversion with ffmpeg
-** switch to spa with react
+* switch to spa with react for c# or go
 
 

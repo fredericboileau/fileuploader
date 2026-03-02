@@ -39,10 +39,13 @@ services:
       echo 'Keycloak is ready!'"
 
   keycloak:
-    image: quay.io/keycloak/keycloak:25.0.1
+    build: ./keycloak
     command:
     - start
     - --http-port=8180
+    - --spi-events-listener-filevault-event-listener-db-url=jdbc:postgresql://db:5432/fileuploader
+    - --spi-events-listener-filevault-event-listener-db-username=postgres
+    - --spi-events-listener-filevault-event-listener-db-password=postgres
     ports:
     - "8180:8180"
     depends_on:

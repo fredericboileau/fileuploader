@@ -38,10 +38,6 @@ public class FileUploadController {
             Model model,
             @AuthenticationPrincipal OidcUser oidcUser) {
 
-        oidcUser.getClaims();
-
-        System.out.println(oidcUser);
-
         String owner = ownerOf(oidcUser);
         model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
         model.addAttribute("username", oidcUser.getPreferredUsername());

@@ -186,7 +186,7 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     public void init() {
         try {
             Files.createDirectories(rootLocation);
-            String sql = """
+            var sqlFilePaths = """
                     create table if not exists filepaths (
                             id serial primary key,
                             name varchar(255) not null,
@@ -194,7 +194,14 @@ public class PostgresqlFileSystemStorageService implements StorageService {
                             unique (name, owner)
                             )
                     """;
-            conn.createStatement().execute(sql);
+            conn.createStatement().execute(sqlFilePaths);
+            var sqlUsers = """
+                    create table if not exists users (
+                            userId uuid primary key,
+                            username varchar(255)
+                            )
+                    """;
+            conn.createStatement().execute(sqlUsers);
         } catch (SQLException e) {
             throw new StorageException("Failed to initialize storage", e);
         } catch (IOException e) {
