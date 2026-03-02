@@ -1,12 +1,23 @@
 <html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" th:href="@{/styles.css}" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
 </head>
 <body class="text-white">
 
   <!-- Navbar -->
-  <div class="navbar">
+  <div class="glass flex items-center justify-between px-6 py-3">
     <div class="flex items-center gap-4">
       <span class="text-lg font-semibold tracking-wide">FileVault</span>
       <a sec:authorize="hasRole('ADMIN')" href="/admin"
@@ -42,7 +53,7 @@
                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
             </svg>
             <span id="file-label" class="text-sm text-white/60">Click to choose a file</span>
-            <input type="file" name="file" class="hidden" required
+            <input type="file" name="file" class="hidden"
               onchange="document.getElementById('file-label').textContent = this.files[0]?.name ?? 'Click to choose a file'" />
           </label>
           <button type="submit"

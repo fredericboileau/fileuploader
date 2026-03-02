@@ -9,9 +9,7 @@
 * DONE make keycloak use db
 * DONE do version with filename in database , need to test
 *
-* size limit per account
-* admin delete user should delete user completely not just its files ?
-* DONE prevent submit empty file
+* do size limit per account
 * make admin account can manage files for all users
 *
 
