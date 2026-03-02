@@ -27,6 +27,7 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     private final int port;
     private final String db;
     private final String dbUrl;
+    private final long maxFilesSize;
 
     private final Connection conn;
 
@@ -38,6 +39,7 @@ public class PostgresqlFileSystemStorageService implements StorageService {
         this.port = properties.getPort();
         this.db = properties.getDb();
         this.dbUrl = baseUrl + host + ":" + String.valueOf(port) + "/" + db;
+        this.maxFilesSize = properties.getMaxFilesSize();
 
         if (properties.getLocation().trim().length() == 0) {
             throw new StorageException("File upload location cannot be Empty");
@@ -53,7 +55,12 @@ public class PostgresqlFileSystemStorageService implements StorageService {
 
     @Override
     public void store(MultipartFile file, String owner) {
-        var sql = "insert into filepaths (name, owner) values (?,?)";
+        long totalFilesSize = getTotalSize(owner);
+        long available = maxFilesSize - totalFilesSize;
+        if (available < file.getSize()) {
+            throw new StorageLimitExceededException(available, file.getSize());
+        }
+
         if (file.isEmpty()) {
             throw new StorageFileEmptyException("Cannot store empty file");
         }
@@ -68,10 +75,17 @@ public class PostgresqlFileSystemStorageService implements StorageService {
                 Files.copy(inputStream, destinationFile);
             }
             try {
-                PreparedStatement stmt = conn.prepareStatement(sql);
-                stmt.setString(1, file.getOriginalFilename());
-                stmt.setObject(2, UUID.fromString(owner));
-                stmt.executeUpdate();
+                var filePathsSql = "insert into filepaths (name, owner) values (?,?)";
+                var filePathsStmt = conn.prepareStatement(filePathsSql);
+                filePathsStmt.setString(1, file.getOriginalFilename());
+                filePathsStmt.setObject(2, UUID.fromString(owner));
+                filePathsStmt.executeUpdate();
+
+                var updateSql = "update users set total_size = total_size + ? where userId = ?";
+                var updateStmt = conn.prepareStatement(updateSql);
+                updateStmt.setLong(1, file.getSize());
+                updateStmt.setObject(2, UUID.fromString(owner));
+                updateStmt.executeUpdate();
             } catch (SQLException e) {
                 Files.deleteIfExists(destinationFile);
                 if ("23505".equals(e.getSQLState())) {
@@ -82,7 +96,7 @@ public class PostgresqlFileSystemStorageService implements StorageService {
             }
 
         } catch (IOException e) {
-            throw new StorageException("Could not create owner subdirectory");
+            throw new StorageException("Could not store file", e);
         }
     }
 
@@ -136,13 +150,49 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     }
 
     @Override
+    public long getMaxFilesSize() {
+        return maxFilesSize;
+    }
+
+    @Override
+    public long getTotalSize(String userId) {
+        var sql = "select total_size from users where userId = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, UUID.fromString(userId));
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getLong(1);
+            }
+            // No row found: restore consistency by computing size from filesystem
+            Path ownerDir = Paths.get(rootLocation.toString(), userId);
+            long totalSize = 0L;
+            if (Files.exists(ownerDir)) {
+                totalSize = Files.walk(ownerDir)
+                        .filter(Files::isRegularFile)
+                        .mapToLong(p -> p.toFile().length())
+                        .sum();
+            }
+            var updateSql = "update users set total_size = ? where userId = ?";
+            var updateStmt = conn.prepareStatement(updateSql);
+            updateStmt.setLong(1, totalSize);
+            updateStmt.setObject(2, UUID.fromString(userId));
+            updateStmt.executeUpdate();
+            return totalSize;
+        } catch (SQLException | IOException e) {
+            throw new StorageException("Could not retrieve total size for " + userId, e);
+        }
+    }
+
+    @Override
     public String lookupUsername(String userId) {
         var sql = "select username from users where userId = ?";
         try {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setObject(1, UUID.fromString(userId));
             ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return rs.getString(1);
+            if (rs.next())
+                return rs.getString(1);
         } catch (SQLException e) {
             throw new StorageException("Could not look up username for " + userId, e);
         }
@@ -157,6 +207,11 @@ public class PostgresqlFileSystemStorageService implements StorageService {
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setObject(1, UUID.fromString(owner));
             stmt.executeUpdate();
+
+            var resetSql = "update users set total_size = 0 where userId = ?";
+            var resetStmt = conn.prepareStatement(resetSql);
+            resetStmt.setObject(1, UUID.fromString(owner));
+            resetStmt.executeUpdate();
         } catch (SQLException e) {
             throw new StorageException("Could not delete DB entries for owner " + owner, e);
         }
@@ -177,22 +232,35 @@ public class PostgresqlFileSystemStorageService implements StorageService {
 
     @Override
     public void delete(String filename, String owner) {
-        String sql = "delete from filepaths where name = ? and owner = ?";
+        long fileSize = 0L;
         try {
-            if (Files.exists(Paths.get(rootLocation.toString(), owner, filename))) {
-                Files.delete(Paths.get(rootLocation.toString(), owner, filename));
+            Path filePath = Paths.get(rootLocation.toString(), owner, filename);
+            fileSize = Files.exists(filePath) ? Files.size(filePath) : 0L;
+            if (fileSize > 0) {
+                Files.delete(filePath);
             } else {
                 System.out.println("File doesn't exist, trying to restore consistency");
             }
-            var stmt = conn.prepareStatement(sql);
-            stmt.setString(1, filename);
-            stmt.setObject(2, UUID.fromString(owner));
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new StorageException(
-                    "Deleted the file from filesystem but not the corresponding entry in DB");
         } catch (IOException e) {
             throw new StorageException("Could not delete file");
+        }
+        try {
+            var deleteSql = "delete from filepaths where name = ? and owner = ?";
+            var deleteStmt = conn.prepareStatement(deleteSql);
+            deleteStmt.setString(1, filename);
+            deleteStmt.setObject(2, UUID.fromString(owner));
+            deleteStmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new StorageException("File deleted from filesystem but not the corresponding entry in DB");
+        }
+        try {
+            var updateSql = "update users set total_size = greatest(0, total_size - ?) where userId = ?";
+            var updateStmt = conn.prepareStatement(updateSql);
+            updateStmt.setLong(1, fileSize);
+            updateStmt.setObject(2, UUID.fromString(owner));
+            updateStmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new StorageException("Deleted the file but couldnt update users table");
         }
     }
 
@@ -212,7 +280,8 @@ public class PostgresqlFileSystemStorageService implements StorageService {
             var sqlUsers = """
                     create table if not exists users (
                             userId uuid primary key,
-                            username varchar(255)
+                            username varchar(255),
+                            total_size bigint not null default 0
                             )
                     """;
             conn.createStatement().execute(sqlUsers);

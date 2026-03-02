@@ -25,4 +25,12 @@ public interface StorageService {
     default String lookupUsername(String userId) {
         return userId;
     }
+
+    default long getTotalSize(String userId) {
+        return 0L;
+    }
+
+    default long getMaxFilesSize() {
+        return 0L;
+    }
 }

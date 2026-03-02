@@ -16,6 +16,7 @@ public class PostgresqlStorageService implements StorageService {
     private final int port;
     private final String db;
     private final String dbUrl;
+    private final long maxFilesSize;
 
     private final Connection conn;
 
@@ -25,6 +26,7 @@ public class PostgresqlStorageService implements StorageService {
         this.port = properties.getPort();
         this.db = properties.getDb();
         this.dbUrl = baseUrl + host + ":" + String.valueOf(port) + "/" + db;
+        this.maxFilesSize = properties.getMaxFilesSize();
 
         try {
             this.conn = DriverManager.getConnection(dbUrl, properties.getUsername(), properties.getPassword());

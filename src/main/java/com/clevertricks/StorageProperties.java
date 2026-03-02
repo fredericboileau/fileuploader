@@ -11,6 +11,7 @@ public class StorageProperties {
     private String db;
     private String username;
     private String password;
+    private long maxFilesSize;
 
     public String getLocation() {
         return location;
@@ -40,6 +41,10 @@ public class StorageProperties {
         return password;
     }
 
+    public long getMaxFilesSize() {
+        return maxFilesSize;
+    }
+
     public void setLocation(String location) {
         this.location = location;
     }
@@ -58,5 +63,9 @@ public class StorageProperties {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setMaxFilesSize(long maxFilesSize) {
+        this.maxFilesSize = maxFilesSize;
     }
 }

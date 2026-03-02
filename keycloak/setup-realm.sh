@@ -125,8 +125,13 @@ create_user() {
   fi
 }
 
-create_user "alice" "alice"
-create_user "bob" "bob"
+echo "Registering event listener 'filevault-event-listener' on realm '$REALM'..."
+curl -sf -X PUT "$KEYCLOAK_URL/admin/realms/$REALM" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "{\"eventsListeners\": [\"jboss-logging\", \"filevault-event-listener\"]}"
+echo "Event listener registered."
+
 create_user "admin" "admin"
 
 echo "Creating realm role 'admin'..."
@@ -176,12 +181,5 @@ curl -sf -X POST "$KEYCLOAK_URL/admin/realms/$REALM/users/$ADMIN_USER_ID/role-ma
   -d "[$CLIENT_ADMIN_ROLE]"
 echo "Client role assigned."
 
-echo "Registering event listener 'filevault-event-listener' on realm '$REALM'..."
-curl -sf -X PUT "$KEYCLOAK_URL/admin/realms/$REALM" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"eventsListeners\": [\"jboss-logging\", \"filevault-event-listener\"]}"
-echo "Event listener registered."
-
 echo ""
-echo "Done. Realm '$REALM' is ready with users alice/alice, bob/bob, admin/admin (realm+client admin role)."
+echo "Done. Realm '$REALM' is ready with user admin/admin (realm+client admin role)."

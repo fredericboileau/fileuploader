@@ -44,7 +44,10 @@
 
     <!-- Upload card -->
     <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl">
-      <h2 class="text-xl font-semibold mb-6 text-white/90">Upload a file</h2>
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-semibold text-white/90">Upload a file</h2>
+        <span class="text-xs text-white/40" th:text="${totalSize / 1024} + ' KB / ' + ${maxSize / 1024} + ' KB'"></span>
+      </div>
       <form method="POST" enctype="multipart/form-data" th:action="@{/}">
         <div class="flex flex-col gap-4">
           <label class="cursor-pointer flex flex-col items-center justify-center border-2 border-dashed border-white/30 rounded-xl py-8 hover:border-white/60 transition">

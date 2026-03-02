@@ -6,6 +6,7 @@ storage:
   username: postgres
   password: postgres
   type: filesystem
+  max-files-size: 104857600 # 100 MB
 
 spring:
   mvc:

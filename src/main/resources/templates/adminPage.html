@@ -53,7 +53,7 @@
           <div>
             <p class="text-sm font-semibold" th:text="${user.username}"></p>
             <p class="text-xs font-mono text-white/40 mt-0.5" th:text="${user.owner}"></p>
-            <p class="text-sm text-white/50 mt-1" th:text="${#lists.size(user.files)} + ' file(s)'"></p>
+            <p class="text-sm text-white/50 mt-1" th:text="${#lists.size(user.files)} + ' file(s) — ' + ${user.totalSize / 1024} + ' KB used'"></p>
           </div>
           <form method="POST" th:action="@{/admin/delete-user}">
             <input type="hidden" name="owner" th:value="${user.owner}" />

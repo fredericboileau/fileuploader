@@ -41,6 +41,8 @@ public class FileUploadController {
         String owner = ownerOf(oidcUser);
         model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
         model.addAttribute("username", oidcUser.getPreferredUsername());
+        model.addAttribute("totalSize", storageService.getTotalSize(owner));
+        model.addAttribute("maxSize", storageService.getMaxFilesSize());
         return "uploadForm";
     }
 
@@ -71,6 +73,10 @@ public class FileUploadController {
         } catch (StorageFileEmptyException e) {
             redirectAttributes.addFlashAttribute("message", "Cannot upload empty file");
             return "redirect:/files";
+        } catch (StorageLimitExceededException e) {
+            redirectAttributes.addFlashAttribute("message",
+                    "Storage limit exceeded: file is " + e.getAttempted() + " bytes but only " + e.getAvailable() + " bytes available");
+            return "redirect:/";
         }
         redirectAttributes.addFlashAttribute(
                 "message", "You successfully uploaded " + file.getOriginalFilename());
@@ -95,6 +101,7 @@ public class FileUploadController {
             Map<String, Object> entry = new java.util.LinkedHashMap<>();
             entry.put("owner", owner);
             entry.put("username", storageService.lookupUsername(owner));
+            entry.put("totalSize", storageService.getTotalSize(owner));
             entry.put("files", storageService.loadAll(owner).collect(Collectors.toList()));
             return entry;
         }).collect(Collectors.toList());
