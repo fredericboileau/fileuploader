@@ -37,7 +37,8 @@ public class FileUploadController {
     }
 
     @GetMapping("/")
-    public String listUploadedFiles(Model model,
+    public String listUploadedFiles(
+            Model model,
             @AuthenticationPrincipal OidcUser oidcUser) {
 
         oidcUser.getClaims();
@@ -52,10 +53,10 @@ public class FileUploadController {
 
     @GetMapping("/files/{filename:.+}")
     @ResponseBody
-    public ResponseEntity<Resource> serveFile(@PathVariable String filename,
+    public ResponseEntity<Resource> serveFile(
+            @PathVariable String filename,
             @AuthenticationPrincipal OidcUser oidcUser) {
         Resource file = storageService.loadAsResource(filename, ownerOf(oidcUser));
-
         if (file == null)
             return ResponseEntity.notFound().build();
 
@@ -64,7 +65,8 @@ public class FileUploadController {
     }
 
     @PostMapping("/")
-    public String handleFileUpload(@RequestParam("file") MultipartFile file,
+    public String handleFileUpload(
+            @RequestParam("file") MultipartFile file,
             RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         try {
@@ -77,12 +79,15 @@ public class FileUploadController {
             redirectAttributes.addFlashAttribute("message", "Cannot upload empty file");
             return "redirect:/files";
         }
-        redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename());
+        redirectAttributes.addFlashAttribute(
+                "message", "You successfully uploaded " + file.getOriginalFilename());
         return "redirect:/";
     }
 
     @PostMapping("/files/delete")
-    public String deleteFiles(@RequestParam List<String> files, RedirectAttributes redirectAttributes,
+    public String deleteFiles(
+            @RequestParam List<String> files,
+            RedirectAttributes redirectAttributes,
             @AuthenticationPrincipal OidcUser oidcUser) {
         String owner = ownerOf(oidcUser);
         files.forEach(f -> storageService.delete(f, owner));
@@ -93,8 +98,7 @@ public class FileUploadController {
     @GetMapping("/admin")
     public String adminPage(Model model, @AuthenticationPrincipal OidcUser oidcUser) {
         model.addAttribute("username", oidcUser.getPreferredUsername());
-        List<String> owners = storageService.listOwners().collect(Collectors.toList());
-        List<Map<String, Object>> users = owners.stream().map(owner -> {
+        List<Map<String, Object>> users = storageService.listOwners().map(owner -> {
             Map<String, Object> entry = new java.util.LinkedHashMap<>();
             entry.put("owner", owner);
             entry.put("files", storageService.loadAll(owner).collect(Collectors.toList()));
