@@ -16,7 +16,7 @@ echo "Creating realm '$REALM'..."
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$KEYCLOAK_URL/admin/realms" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"realm\": \"$REALM\", \"enabled\": true}")
+  -d "{\"realm\": \"$REALM\", \"enabled\": true, \"registrationAllowed\": true}")
 if [ "$STATUS" = "201" ]; then
   echo "Realm created."
 elif [ "$STATUS" = "409" ]; then
@@ -34,7 +34,7 @@ STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$KEYCLOAK_URL/admin/rea
     \"enabled\": true,
     \"publicClient\": false,
     \"standardFlowEnabled\": true,
-    \"secret\": \"$CLIENT_SECRET\",
+\"secret\": \"$CLIENT_SECRET\",
     \"redirectUris\": [\"$REDIRECT_URI\"],
     \"webOrigins\": [\"http://localhost:8080\"],
     \"attributes\": {\"post.logout.redirect.uris\": \"http://localhost:8080\"}
