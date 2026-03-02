@@ -21,4 +21,8 @@ public interface StorageService {
     Stream<String> listOwners();
 
     void deleteAllForOwner(String owner);
+
+    default String lookupUsername(String userId) {
+        return userId;
+    }
 }

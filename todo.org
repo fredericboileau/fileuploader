@@ -12,8 +12,9 @@
 * DONE prevent submit empty file
 * DONE make admin account can manage files for all users
 
+* DONE eventlistener spi
+* redis caching for frequently retrieved files
 * size limit per account
-* eventlistener spi
 * take into account filetype
 * handle conversion with ffmpeg
 *

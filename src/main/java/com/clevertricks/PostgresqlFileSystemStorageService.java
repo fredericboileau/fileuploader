@@ -136,6 +136,20 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     }
 
     @Override
+    public String lookupUsername(String userId) {
+        var sql = "select username from users where userId = ?";
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, UUID.fromString(userId));
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getString(1);
+        } catch (SQLException e) {
+            throw new StorageException("Could not look up username for " + userId, e);
+        }
+        return userId;
+    }
+
+    @Override
     public void deleteAllForOwner(String owner) {
         var sql = "delete from filepaths where owner = ?";
         try {

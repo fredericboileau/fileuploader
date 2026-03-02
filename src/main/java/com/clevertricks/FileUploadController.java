@@ -94,6 +94,7 @@ public class FileUploadController {
         List<Map<String, Object>> users = storageService.listOwners().map(owner -> {
             Map<String, Object> entry = new java.util.LinkedHashMap<>();
             entry.put("owner", owner);
+            entry.put("username", storageService.lookupUsername(owner));
             entry.put("files", storageService.loadAll(owner).collect(Collectors.toList()));
             return entry;
         }).collect(Collectors.toList());
