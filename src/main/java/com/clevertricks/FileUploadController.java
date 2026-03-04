@@ -1,5 +1,6 @@
 package com.clevertricks;
 
+import java.nio.file.FileAlreadyExistsException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,10 +40,15 @@ public class FileUploadController {
             @AuthenticationPrincipal OidcUser oidcUser) {
 
         String owner = ownerOf(oidcUser);
+
         model.addAttribute("files", storageService.loadAll(owner).collect(Collectors.toList()));
         model.addAttribute("username", oidcUser.getPreferredUsername());
         model.addAttribute("totalSize", storageService.getTotalSize(owner));
         model.addAttribute("maxSize", storageService.getMaxFilesSize());
+        model.addAttribute("shareableUsers", storageService.listOwners()
+                .filter(id -> !id.equals(owner))
+                .collect(Collectors.toMap(id -> id, storageService::lookupUsername)));
+        model.addAttribute("shares", storageService.listShares(owner));
         return "uploadForm";
     }
 
@@ -68,18 +74,33 @@ public class FileUploadController {
             storageService.store(file, ownerOf(oidcUser));
         } catch (StorageFileAlreadyExistsException e) {
             redirectAttributes.addFlashAttribute("message",
-                    "File with same name already exists, you need to delete it first to ");
-            return "redirect:/files";
+                    "File with same name already exists, you need to delete it first to replace it");
+            return "redirect:/";
         } catch (StorageFileEmptyException e) {
             redirectAttributes.addFlashAttribute("message", "Cannot upload empty file");
-            return "redirect:/files";
+            return "redirect:/";
         } catch (StorageLimitExceededException e) {
             redirectAttributes.addFlashAttribute("message",
-                    "Storage limit exceeded: file is " + e.getAttempted() + " bytes but only " + e.getAvailable() + " bytes available");
+                    "Storage limit exceeded: file is " + e.getAttempted() + " bytes but only " + e.getAvailable()
+                            + " bytes available");
             return "redirect:/";
         }
         redirectAttributes.addFlashAttribute(
                 "message", "You successfully uploaded " + file.getOriginalFilename());
+        return "redirect:/";
+    }
+
+    @PostMapping("/share")
+    public String shareFilesWithUser(
+            @RequestParam(required = false) List<String> file,
+            @RequestParam String usersToShareWith,
+            RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal OidcUser oidcUser) {
+        if (file == null || file.isEmpty()) {
+            return "redirect:/";
+        }
+        storageService.shareFilesWithUser(file, ownerOf(oidcUser), usersToShareWith);
+        redirectAttributes.addFlashAttribute("message", "Shared " + file.size() + " file(s)");
         return "redirect:/";
     }
 

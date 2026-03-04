@@ -1,5 +1,6 @@
 package com.clevertricks;
 
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,7 +12,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,6 +100,8 @@ public class PostgresqlFileSystemStorageService implements StorageService {
                 }
             }
 
+        } catch (FileAlreadyExistsException e) {
+            throw new StorageFileAlreadyExistsException("File already exists");
         } catch (IOException e) {
             throw new StorageException("Could not store file", e);
         }
@@ -181,6 +188,57 @@ public class PostgresqlFileSystemStorageService implements StorageService {
             return totalSize;
         } catch (SQLException | IOException e) {
             throw new StorageException("Could not retrieve total size for " + userId, e);
+        }
+    }
+
+    @Override
+    public void shareFilesWithUser(List<String> filenames, String owner, String userId) {
+        var selectSql = "select id from filepaths where name = ? and owner = ?";
+        var insertSql = "insert into file_shares (file_id, shared_with) values (?, ?) on conflict do nothing";
+        try {
+            PreparedStatement selectStmt = conn.prepareStatement(selectSql);
+            PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+            for (String filename : filenames) {
+                selectStmt.setString(1, filename);
+                selectStmt.setObject(2, UUID.fromString(owner));
+                ResultSet rs = selectStmt.executeQuery();
+                if (!rs.next()) {
+                    throw new StorageFileNotFoundException("File not found: " + filename);
+                }
+                insertStmt.setInt(1, rs.getInt(1));
+                insertStmt.setObject(2, UUID.fromString(userId));
+                insertStmt.addBatch();
+            }
+            insertStmt.executeBatch();
+        } catch (SQLException e) {
+            throw new StorageException("Could not share files with user " + userId, e);
+        }
+    }
+
+    @Override
+    public Map<String, List<String>> listShares(String userId) {
+        var sql = """
+                select fp.owner, fp.name
+                from filepaths fp
+                join file_shares fs on fs.file_id = fp.id
+                where fs.shared_with = ?
+                """;
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setObject(1, UUID.fromString(userId));
+            ResultSet rs = stmt.executeQuery();
+            record Share(String owner, String name) {
+            }
+            List<Share> rows = new ArrayList<>();
+
+            while (rs.next()) {
+                rows.add(new Share(rs.getString("owner"), rs.getString("name")));
+            }
+            return rows.stream().collect(Collectors.groupingBy(
+                    Share::owner,
+                    Collectors.mapping(Share::name, Collectors.toList())));
+        } catch (SQLException e) {
+            throw new StorageException("Could not retrieve shares for " + userId, e);
         }
     }
 
@@ -285,6 +343,14 @@ public class PostgresqlFileSystemStorageService implements StorageService {
                             )
                     """;
             conn.createStatement().execute(sqlUsers);
+            var sqlShares = """
+                    create table if not exists file_shares (
+                            file_id int references filepaths(id) on delete cascade,
+                            shared_with uuid references users(userId) on delete cascade,
+                            primary key (file_id, shared_with)
+                            )
+                    """;
+            conn.createStatement().execute(sqlShares);
         } catch (SQLException e) {
             throw new StorageException("Failed to initialize storage", e);
         } catch (IOException e) {

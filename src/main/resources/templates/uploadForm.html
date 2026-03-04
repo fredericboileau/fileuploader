@@ -68,9 +68,9 @@
     </div>
 
     <!-- Files card -->
-    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl" th:if="${not #lists.isEmpty(files)}">
+    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl" >
       <h2 class="text-xl font-semibold mb-6 text-white/90">Your files</h2>
-      <form method="POST" th:action="@{/files/delete}">
+        <form method="POST" th:action="@{/files/delete}" th:if="${not #lists.isEmpty(files)}">
         <ul class="flex flex-col gap-3 mb-6">
           <li th:each="file : ${files}" class="flex items-center gap-3">
             <input type="checkbox" name="files" th:value="${file}"
@@ -84,6 +84,44 @@
           Delete selected
         </button>
       </form>
+    </div>
+
+
+    <!-- Share card -->
+    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl"
+         th:if="${not #lists.isEmpty(files) and not #maps.isEmpty(shareableUsers)}">
+      <h2 class="text-xl font-semibold mb-6 text-white/90">Share a file</h2>
+      <form method="POST" th:action="@{/share}">
+        <div class="flex flex-col gap-4">
+          <select name="usersToShareWith"
+            class="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none">
+            <option th:each="entry : ${shareableUsers}" th:value="${entry.key}" th:text="${entry.value}"></option>
+          </select>
+          <ul class="flex flex-col gap-2">
+            <li th:each="f : ${files}" class="flex items-center gap-3">
+              <input type="checkbox" name="file" th:value="${f}"
+                class="w-4 h-4 accent-indigo-400 cursor-pointer" />
+              <span class="text-sm text-white/70" th:text="${f}"></span>
+            </li>
+          </ul>
+          <button type="submit"
+            class="bg-indigo-500 hover:bg-indigo-600 text-white font-medium py-2 rounded-xl transition">
+            Share
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Shared with me card -->
+    <div class="glass rounded-2xl p-8 w-full max-w-md shadow-xl" th:if="${not #maps.isEmpty(shares)}">
+      <h2 class="text-xl font-semibold mb-6 text-white/90">Shared with you</h2>
+      <div th:each="entry : ${shares}" class="mb-4">
+        <p class="text-xs text-white/40 font-mono mb-1" th:text="${entry.key}"></p>
+        <ul class="flex flex-col gap-1">
+          <li th:each="f : ${entry.value}" class="text-sm text-indigo-300 pl-2 border-l border-white/10"
+            th:text="${f}"></li>
+        </ul>
+      </div>
     </div>
 
   </div>

@@ -3,7 +3,9 @@ package com.clevertricks;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.stream.Stream;
+import java.util.Map;
 
 public interface StorageService {
     void init();
@@ -19,6 +21,12 @@ public interface StorageService {
     void delete(String filename, String owner);
 
     Stream<String> listOwners();
+
+    void shareFileWith(String filename, String owner, List<String> userIds);
+
+    void shareFilesWithUser(List<String> filenames, String owner, String userId);
+
+    Map<String, List<String>> listShares(String userId);
 
     void deleteAllForOwner(String owner);
 
