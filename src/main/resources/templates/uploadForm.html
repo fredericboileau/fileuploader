@@ -118,8 +118,10 @@
       <div th:each="entry : ${shares}" class="mb-4">
         <p class="text-xs text-white/40 font-mono mb-1" th:text="${entry.key}"></p>
         <ul class="flex flex-col gap-1">
-          <li th:each="f : ${entry.value}" class="text-sm text-indigo-300 pl-2 border-l border-white/10"
-            th:text="${f}"></li>
+          <li th:each="f : ${entry.value}" class="pl-2 border-l border-white/10">
+            <a th:href="@{/shared/{owner}/{file}(owner=${entry.key}, file=${f})}" th:text="${f}"
+              class="text-sm text-indigo-300 hover:text-indigo-100 hover:underline transition" />
+          </li>
         </ul>
       </div>
     </div>

@@ -22,11 +22,13 @@ public interface StorageService {
 
     Stream<String> listOwners();
 
-    void shareFileWith(String filename, String owner, List<String> userIds);
-
     void shareFilesWithUser(List<String> filenames, String owner, String userId);
 
     Map<String, List<String>> listShares(String userId);
+
+    boolean isSharedWith(String filename, String owner, String userId);
+
+    Map<String, String> listAllUsers();
 
     void deleteAllForOwner(String owner);
 

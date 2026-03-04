@@ -45,9 +45,9 @@ public class FileUploadController {
         model.addAttribute("username", oidcUser.getPreferredUsername());
         model.addAttribute("totalSize", storageService.getTotalSize(owner));
         model.addAttribute("maxSize", storageService.getMaxFilesSize());
-        model.addAttribute("shareableUsers", storageService.listOwners()
-                .filter(id -> !id.equals(owner))
-                .collect(Collectors.toMap(id -> id, storageService::lookupUsername)));
+        Map<String, String> allUsers = storageService.listAllUsers();
+        allUsers.remove(owner);
+        model.addAttribute("shareableUsers", allUsers);
         model.addAttribute("shares", storageService.listShares(owner));
         return "uploadForm";
     }
@@ -61,6 +61,21 @@ public class FileUploadController {
         if (file == null)
             return ResponseEntity.notFound().build();
 
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + filename + "\"").body(file);
+    }
+
+    @GetMapping("/shared/{owner}/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> serveSharedFile(
+            @PathVariable String owner,
+            @PathVariable String filename,
+            @AuthenticationPrincipal OidcUser oidcUser) {
+        if (!storageService.isSharedWith(filename, owner, ownerOf(oidcUser)))
+            return ResponseEntity.status(403).build();
+        Resource file = storageService.loadAsResource(filename, owner);
+        if (file == null)
+            return ResponseEntity.notFound().build();
         return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
                 "attachment; filename=\"" + filename + "\"").body(file);
     }

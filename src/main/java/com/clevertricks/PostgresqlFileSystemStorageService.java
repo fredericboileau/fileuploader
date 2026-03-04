@@ -192,6 +192,39 @@ public class PostgresqlFileSystemStorageService implements StorageService {
     }
 
     @Override
+    public boolean isSharedWith(String filename, String owner, String userId) {
+        var sql = """
+                select 1 from file_shares fs
+                join filepaths fp on fs.file_id = fp.id
+                where fp.name = ? and fp.owner = ? and fs.shared_with = ?
+                """;
+        try {
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            stmt.setString(1, filename);
+            stmt.setObject(2, UUID.fromString(owner));
+            stmt.setObject(3, UUID.fromString(userId));
+            return stmt.executeQuery().next();
+        } catch (SQLException e) {
+            throw new StorageException("Could not check share permission", e);
+        }
+    }
+
+    @Override
+    public Map<String, String> listAllUsers() {
+        var sql = "select userId, username from users";
+        Map<String, String> result = new java.util.LinkedHashMap<>();
+        try {
+            ResultSet rs = conn.createStatement().executeQuery(sql);
+            while (rs.next()) {
+                result.put(rs.getString(1), rs.getString(2));
+            }
+        } catch (SQLException e) {
+            throw new StorageException("Could not retrieve users", e);
+        }
+        return result;
+    }
+
+    @Override
     public void shareFilesWithUser(List<String> filenames, String owner, String userId) {
         var selectSql = "select id from filepaths where name = ? and owner = ?";
         var insertSql = "insert into file_shares (file_id, shared_with) values (?, ?) on conflict do nothing";
@@ -234,9 +267,10 @@ public class PostgresqlFileSystemStorageService implements StorageService {
             while (rs.next()) {
                 rows.add(new Share(rs.getString("owner"), rs.getString("name")));
             }
-            return rows.stream().collect(Collectors.groupingBy(
-                    Share::owner,
-                    Collectors.mapping(Share::name, Collectors.toList())));
+            return rows.stream().collect(
+                    Collectors.groupingBy(Share::owner,
+                            Collectors.mapping(Share::name,
+                                    Collectors.toList())));
         } catch (SQLException e) {
             throw new StorageException("Could not retrieve shares for " + userId, e);
         }
@@ -277,14 +311,15 @@ public class PostgresqlFileSystemStorageService implements StorageService {
 
     @Override
     public void deleteAll() {
-        String sql = "drop table if exists filepaths";
         try {
             if (Files.exists(rootLocation) && !FileSystemUtils.deleteRecursively(rootLocation.toFile())) {
                 throw new StorageException("Could not delete all files");
             }
-            conn.createStatement().execute(sql);
+            conn.createStatement().execute("drop table if exists file_shares");
+            conn.createStatement().execute("drop table if exists filepaths");
+            conn.createStatement().execute("update users set total_size = 0");
         } catch (SQLException e) {
-            throw new StorageException("Could not delete table filepaths");
+            throw new StorageException("Could not delete tables", e);
         }
     }
 

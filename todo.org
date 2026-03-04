@@ -13,11 +13,14 @@
 * DONE make admin account can manage files for all users
 
 * DONE eventlistener spi
-* redis caching for frequently retrieved files
-* size limit per account
-* take into account filetype
-* handle conversion with ffmpeg
 *
+* DONE size limit per account
+* DONE share files
+** listShares method to display them in the UI, use it to inject in model Map<owner,List<files>>
+** display shares in ui
+** add method to share in controller at /share and method in storageservice to handle it
+** display form to share in ui
+* redis caching for frequently retrieved files
 * switch to spa with react for c# or go
 
 
